@@ -1,8 +1,8 @@
-*/*.ipynb_checkpoints
-/.env
-.venv
-/__pycache__
+./.env
+./.venv
+./__pycache__
 .DS_Store
 *.egg-info
 /dist
 /build
+*/*.ipynb_checkpoints
