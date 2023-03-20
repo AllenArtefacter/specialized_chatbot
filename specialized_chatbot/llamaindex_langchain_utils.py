@@ -12,11 +12,11 @@ MODEL = "text-davinci-003"
 LLM = OpenAI(
     temperature=0,
     model_name=MODEL,
-    max_tokens=1600
+    max_tokens=256
 )
 
 LLM_PREDICTOR = LLMPredictor(llm=LLM)
-PROMPT_HELPER = PromptHelper(4096, 1024, 30)
+PROMPT_HELPER = PromptHelper(1024, 256, 30)
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"

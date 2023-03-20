@@ -52,6 +52,8 @@ from langchain.agents import initialize_agent, Tool
 # 1. A bot class. load data or load index, recieve query and ouput responese
 # 2. A bot class. beyond 1, can also remember the conversation
 
+N_CONVERSATION_MEMORY = 3
+
 import os
 os.environ["TOKENIZERS_PARALLELISM"]= 'true'
 
@@ -133,7 +135,7 @@ class Chatbot(GPTVectorStoreIndex):
         ]
 
         self.langchain_prompt_template = get_langchain_prompt_template(self.tools)
-        self.n_conversation = 5
+        self.n_conversation = N_CONVERSATION_MEMORY
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
