@@ -23,3 +23,6 @@ bot = chatbot.Chatbot('<your document file directory>')
 
 print(bot.continue_conversation('How are you?'))
 ```
+
+## Further devlopment
+Please refer to [Llama-Index](https://gpt-index.readthedocs.io/en/latest/index.html) and [Langchain](https://langchain.readthedocs.io/en/latest/) for more examples and documents
