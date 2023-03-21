@@ -5,4 +5,5 @@ wikipedia
 unstructured
 PyPDF2
 docx2txt
-tensorflow>=2.0
+tensorflow
+langid
