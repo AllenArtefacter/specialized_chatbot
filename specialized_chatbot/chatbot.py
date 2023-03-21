@@ -105,14 +105,15 @@ class Chatbot(GPTVectorStoreIndex):
         llm_predictor = LLM_PREDICTOR
         prompt_helper = PROMPT_HELPER
 
+
         super().__init__(
             documents=documents,
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
+            text_qa_template= DEFAULT_TEXT_QA_PROMPT,# text_qa_template,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             vector_store=vector_store,
-            #prompt_helper = prompt_helper,
+            prompt_helper = prompt_helper,
             **kwargs,
         )
 
@@ -135,6 +136,7 @@ class Chatbot(GPTVectorStoreIndex):
         ]
 
         self.langchain_prompt_template = get_langchain_prompt_template(self.tools)
+        # self.text_qa_template = self.langchain_prompt_template
         self.n_conversation = N_CONVERSATION_MEMORY
 
     @classmethod
@@ -155,6 +157,7 @@ class Chatbot(GPTVectorStoreIndex):
     def conversation(self, query, **kwargs):
         text = self.query(query,**kwargs)
         logging.info(query)
+        # logging.info(text)
         return str(text)
 
     def continue_conversation(self, query, **kwargs):

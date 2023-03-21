@@ -12,14 +12,14 @@ MODEL = "text-davinci-003"
 LLM = OpenAI(
     temperature=0,
     model_name=MODEL,
-    max_tokens=256
+    max_tokens=1024
 )
 
 LLM_PREDICTOR = LLMPredictor(llm=LLM)
-PROMPT_HELPER = PromptHelper(1024, 256, 30)
+PROMPT_HELPER = PromptHelper(2048, 1024, 256)
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
-    "Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
+    "Given the context information and not prior knowledge, answer the question,  make the answer short,, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
     "You are an expert to beer and be glad to recommand beer \n"
     "---------------------\n"
     "Context: {context_str}"
@@ -32,7 +32,7 @@ DEFAULT_TEXT_QA_PROMPT = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
 
 
 def get_langchain_prompt_template(tools):
-    prefix = """Given the context information and not prior knowledge, answer the question, and if the answer is not contained within the text below, said "sorry I don't know"""
+    prefix = """Given the context information and not prior knowledge, answer the question, make the answer short, and if the answer is not contained within the text below, said "sorry I don't know"""
     suffix = """
     You are an expert to beer and be glad to recommand beer
 
