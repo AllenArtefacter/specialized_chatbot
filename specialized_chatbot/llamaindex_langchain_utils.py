@@ -5,6 +5,7 @@ import langchain
 from langchain.agents import ZeroShotAgent,AgentExecutor
 from llama_index import PromptHelper, LLMPredictor
 from langchain import OpenAI
+from langchain.chat_models import ChatOpenAI
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 MODEL = "text-davinci-003"
@@ -54,10 +55,10 @@ COMPETITORS = [
 RECOMMANDERS = [
     "Boxing Cat",
     "Goose Island",
-    "Budweiser",
+    "Budweiser (百威)",
     "Corona",
     "Kwak",
-    "Harbin Beer"
+    "哈尔滨啤酒"
 ]
 
 HALF_OPENED_TEXT_QA_PROMPT_TMPL = (
@@ -74,7 +75,7 @@ HALF_OPENED_TEXT_QA_PROMPT_TMPL = (
 )
 HALF_OPENED_TEXT_QA_PROMPT = QuestionAnswerPrompt(HALF_OPENED_TEXT_QA_PROMPT_TMPL)
 
-def get_llm_predictor(model_name:str, **kwargs)->LLMPredictor:
+def get_llm_predictor(model_name:str=MODEL, **kwargs)->LLMPredictor:
     """get language model
     Parameters:
     -----------
@@ -83,10 +84,10 @@ def get_llm_predictor(model_name:str, **kwargs)->LLMPredictor:
     kwargs:
         other arguments of OpenAI API
     """
-    LLM = OpenAI(
-        model_name=model_name,
-        **kwargs
-    )
+    if model_name in ['gpt-3.5-turbo']:
+        LLM = ChatOpenAI(model_name=model_name, **kwargs)
+    else:
+        LLM = OpenAI(model_name=model_name, **kwargs)
 
     llm_predictor = LLMPredictor(llm=LLM)
     return llm_predictor

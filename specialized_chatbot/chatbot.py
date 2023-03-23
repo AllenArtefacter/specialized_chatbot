@@ -70,6 +70,29 @@ class Chatbot(GPTVectorStoreIndex):
     ----------
         document_directory: str
             data directory for you corpus hub, based on which the chatbot will answer
+        language_detect: bool
+            set `language_detect` the bot will detect the language used by the question and add a
+            prompt to tell OpenAI use the same language in the answer
+        human_agent_name: str
+            when comes a question what we feed to the chatbot is "{human_agent_name}:{quetions}\n{ai_agaent_name}:"
+            e.g., if `human_agent_name` and `ai_angent_name` are set to be "Human" and "AI"
+            the prompt will be:
+            ```
+            Please answer the question:
+            Human: question
+            AI:
+            ```
+        ai_angent_name: str
+            when comes a question what we feed to the chatbot is "{human_agent_name}:{quetions}\n{ai_agaent_name}:"
+            e.g., if `human_agent_name` and `ai_angent_name` are set to be "Human" and "AI"
+            the prompt will be:
+            ```
+            Please answer the question:
+            Human: question
+            AI:
+            ```
+        n_conversation: int
+            number of conversation the chatbot will track
 
     Examples:
     ----------
@@ -88,6 +111,7 @@ class Chatbot(GPTVectorStoreIndex):
         language_detect: Optional[bool]=False,
         human_agent_name: Optional[str] = 'prompt',
         ai_angent_name: Optional[str] = 'response',
+        n_conversation: Optional[int] = N_CONVERSATION_MEMORY,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexDict] = None,
         prompt_helper: Optional[PromptHelper] = None,
@@ -132,23 +156,12 @@ class Chatbot(GPTVectorStoreIndex):
         self._index_struct.embeddings_dict = embedding_dict
         # update docstore with current struct
         self._docstore.add_documents([self.index_struct], allow_update=True)
+        # self.text_qa_template = self.langchain_prompt_template
+        self.n_conversation = n_conversation
 
         self.question_list = []
         self.answer_list = []
-
-        self.tools = [
-            Tool(
-                name = "ABI Index",
-                func=lambda q: str(self.query(q)),
-                description="Answer with ABI content",
-                return_direct=True
-            ),
-        ]
-
-        self.langchain_prompt_template = get_langchain_prompt_template(self.tools)
-        # self.text_qa_template = self.langchain_prompt_template
-        self.n_conversation = N_CONVERSATION_MEMORY
-
+        
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
@@ -176,13 +189,13 @@ class Chatbot(GPTVectorStoreIndex):
 
     def continue_conversation(self, query, **kwargs):
         """answer with former conversation"""
-        self.question_list.append(query)
         conversatiosn = self._concate_qa(query)
         if self.language_detect:
             lang_prompt = self._add_language_prompt(query)
             conversatiosn = lang_prompt + conversatiosn
         #self.text_qa_template = self.langchain_prompt_template
         resonse = self.query(conversatiosn, **kwargs)
+        self.question_list.append(query)
         self.answer_list.append(str(resonse))
         return str(resonse)
 
