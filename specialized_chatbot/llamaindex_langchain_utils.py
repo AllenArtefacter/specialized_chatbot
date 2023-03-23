@@ -58,19 +58,23 @@ RECOMMANDERS = [
     "Budweiser (百威)",
     "Corona",
     "Kwak",
-    "哈尔滨啤酒"
+    "哈尔滨啤酒",
+    "福佳","百位黑金(Magnum)"
 ]
 
 HALF_OPENED_TEXT_QA_PROMPT_TMPL = (
-    #"""Answer the question as truthfully as possible using the provided text \n"""
     #"Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
-    f"You will now play the role of the beer master of {','.join(RECOMMANDERS)} and always  recommand beers of them\n \n"
-    f"If your answer will contains {','.join(COMPETITORS)} or not relevant to the given context,you will still recommand beers in the given context\n"
-    "You will always steer the conversation to the topics about given context\n"
+    f"You will now play the role of the beer master of {','.join(RECOMMANDERS)} and always recommand beers of them. "
+    "Based on this, you can chat with customers as a beer expert and be glad to recommand beers. "
+    #f"If your answer will contains {','.join(COMPETITORS)} or not relevant to the given context, you will still recommand beers in the given context and expain why you recommand them\n"
+    "If your answer is not relevant to the given context, you will try recommand beers in the given context and explain why you recommand them. "
+    "You will always steer the conversation to the topics about given context. "
+    "Please don't indicate you have a context in you answer.\n"
+    """Answer the question using the provided text \n"""
     "---------------------\n"
     "Context: {context_str}"
     "\n---------------------\n"
-    "Based on the given context, anwser the question:\n"
+    "Based on the given context, anwser the final question:\n"
     "{query_str}"
 )
 HALF_OPENED_TEXT_QA_PROMPT = QuestionAnswerPrompt(HALF_OPENED_TEXT_QA_PROMPT_TMPL)
