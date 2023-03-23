@@ -3,11 +3,13 @@ import logging
 import json
 from .llamaindex_langchain_utils import (
     DEFAULT_TEXT_QA_PROMPT,
+    HALF_OPENED_TEXT_QA_PROMPT_TMPL,
     MODEL,
     LLM,
     LLM_PREDICTOR,
     PROMPT_HELPER,
-    get_langchain_prompt_template
+    get_langchain_prompt_template,
+    get_llm_predictor
 )
 from .lang_utils import lang_detect
 from llama_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
@@ -84,8 +86,11 @@ class Chatbot(GPTVectorStoreIndex):
         self,
         document_directory: Optional[str]=None,
         language_detect: Optional[bool]=False,
+        human_agent_name: Optional[str] = 'prompt',
+        ai_angent_name: Optional[str] = 'response',
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexDict] = None,
+        prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -103,9 +108,13 @@ class Chatbot(GPTVectorStoreIndex):
             documents = SimpleDirectoryReader(self.document_directory).load_data()
         self.language_detect = language_detect
         #text_qa_template = DEFAULT_TEXT_QA_PROMPT
-        llm_predictor = LLM_PREDICTOR
-        prompt_helper = PROMPT_HELPER
+        if not llm_predictor:
+            llm_predictor = LLM_PREDICTOR
+        if not prompt_helper:
+            prompt_helper = PROMPT_HELPER
 
+        self.human_agent_name = human_agent_name
+        self.ai_angent_name = ai_angent_name
 
         super().__init__(
             documents=documents,
@@ -156,7 +165,7 @@ class Chatbot(GPTVectorStoreIndex):
         query_kwargs["simple_vector_store_data_dict"] = vector_store._data
 
     def conversation(self, query, **kwargs):
-        query = f"prompt:{query}\nresponse:"
+        query = f"{self.human_agent_name}:{query}\n{self.ai_angent_name}:"
         if self.language_detect:
             lang_prompt = self._add_language_prompt(query)
             query = lang_prompt+query
@@ -177,7 +186,7 @@ class Chatbot(GPTVectorStoreIndex):
         self.answer_list.append(str(resonse))
         return str(resonse)
 
-    def _concate_qa(self,query):
+    def _concate_qa(self,query)->str:
         text_conversations = ''
         conversations = []
         if len(self.answer_list):
@@ -185,17 +194,17 @@ class Chatbot(GPTVectorStoreIndex):
                 self.question_list[-self.n_conversation:],
                 self.answer_list[-self.n_conversation:]
             ):
-                conversations.append(f"prompt:{q} \nresponse:{a} \n")
+                conversations.append(f"{self.human_agent_name}:{q} \n{self.ai_angent_name}:{a} \n")
             text_conversations = '\n'.join(conversations)
             while len(text_conversations) >= 1000 and len(conversations) >1:
                 conversations = conversations[1:]
                 text_conversations = '\n'.join(conversations)
 
-        text_conversations += f"prompt:{query} \n response:"
+        text_conversations += f"{self.human_agent_name}:{query} \n{self.ai_angent_name}:"
 
         return text_conversations
 
-    def _add_language_prompt(self,query:str):
+    def _add_language_prompt(self,query:str)->str:
         lang = lang_detect(query)
         if lang not in ['Chinese', 'English']:
             lang = 'English'

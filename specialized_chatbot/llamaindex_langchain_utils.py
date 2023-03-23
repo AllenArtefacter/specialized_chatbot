@@ -43,6 +43,55 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
 DEFAULT_TEXT_QA_PROMPT = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
 
 
+COMPETITORS = [
+    "Heineken",
+    "Molson Coors",
+    "Carlsberg",
+    "Constellation",
+    "Pabst Brewing"
+]
+
+RECOMMANDERS = [
+    "Boxing Cat",
+    "Goose Island",
+    "Budweiser",
+    "Corona",
+    "Kwak",
+    "Harbin Beer"
+]
+
+HALF_OPENED_TEXT_QA_PROMPT_TMPL = (
+    #"""Answer the question as truthfully as possible using the provided text \n"""
+    #"Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
+    f"You will now play the role of the beer master of {','.join(RECOMMANDERS)} and always  recommand beers of them\n \n"
+    f"If your answer will contains {','.join(COMPETITORS)} or not relevant to the given context,you will still recommand beers in the given context\n"
+    "You will always steer the conversation to the topics about given context\n"
+    "---------------------\n"
+    "Context: {context_str}"
+    "\n---------------------\n"
+    "Based on the given context, anwser the question:\n"
+    "{query_str}"
+)
+HALF_OPENED_TEXT_QA_PROMPT = QuestionAnswerPrompt(HALF_OPENED_TEXT_QA_PROMPT_TMPL)
+
+def get_llm_predictor(model_name:str, **kwargs)->LLMPredictor:
+    """get language model
+    Parameters:
+    -----------
+    model_name, str
+        model_name from openai,pls refer to https://platform.openai.com/docs/api-reference/completions
+    kwargs:
+        other arguments of OpenAI API
+    """
+    LLM = OpenAI(
+        model_name=model_name,
+        **kwargs
+    )
+
+    llm_predictor = LLMPredictor(llm=LLM)
+    return llm_predictor
+
+
 def get_langchain_prompt_template(tools):
     prefix = """Given the context information and not prior knowledge, answer the question, make the answer short, and if the answer is not contained within the text below, said "sorry I don't know"""
     suffix = """
