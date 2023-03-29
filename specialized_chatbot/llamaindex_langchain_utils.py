@@ -59,7 +59,8 @@ RECOMMANDERS = [
     "Corona",
     "Kwak",
     "哈尔滨啤酒",
-    "福佳","百位黑金(Magnum)"
+    "福佳",
+    "百位黑金(Magnum)"
 ]
 
 HALF_OPENED_TEXT_QA_PROMPT_TMPL = (
@@ -78,6 +79,83 @@ HALF_OPENED_TEXT_QA_PROMPT_TMPL = (
     "{query_str}"
 )
 HALF_OPENED_TEXT_QA_PROMPT = QuestionAnswerPrompt(HALF_OPENED_TEXT_QA_PROMPT_TMPL)
+
+
+HALF_OPENED_TEXT_QA_PROMPT_ZH_TMPL = (
+    #"""Answer the question as truthfully as possible using the provided text \n"""
+    #"Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
+    f"你现在将扮演{','.join(RECOMMANDERS)} 等品牌的啤酒大师与客人对话，并愉快地推荐这些品牌的啤酒。"
+    f"如果你的回答可能与给定的情景无关，请还是推荐情境内提到的啤酒。"
+    "你会将话题婉的拉回给定的情境中来。"
+    "\n---------------------\n"
+    "给定的情境： {context_str}"
+    "\n---------------------\n"
+    "基于给定的情境，请回答客人的问题:\n"
+    "{query_str}"
+)
+HALF_OPENED_TEXT_QA_ZH_PROMPT = QuestionAnswerPrompt(HALF_OPENED_TEXT_QA_PROMPT_ZH_TMPL)
+
+CHATBOT_PATH = 'half_opened.json'
+
+RECOMMANDERS = [
+    "Boxing Cat",
+    "Goose Island",
+    "Budweiser",
+    "Corona",
+    "Kwak",
+    "Harbin beer",
+    "Hoegaarden",
+    "Magnum"
+]
+
+RECOMMANDERS_ZH = [
+    "拳击猫",
+    "鹅岛",
+    "百威",
+    "科罗娜",
+    "比利时夸克啤酒",
+    "哈尔滨啤酒",
+    "福佳",
+    "百威黑金"
+]
+
+MORE_OPENED_TEXT_QA_PROMPT_TMPL =(
+    #"Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
+    f"You will now play the role of the beer master chat with human "
+    "You will always find a way to recommand beers. "
+    #f"If your answer will contains {','.join(COMPETITORS)} or not relevant to the given context, you will still recommand beers in the given context and expain why you recommand them\n"
+    #"If your answer is not relevant to the given context, you will try recommand beers in the given context and explain why you recommand them. "
+    #"You will always steer the conversation to the topics about given context. "
+    f"If you are going to talk about beers, please talk more about beers in the given context or {', '.join(RECOMMANDERS)}\n"
+    #"Please don't indicate you have a context in you answer.\n"
+    #"""Answer the question using the provided text \n"""
+    "---------------------\n"
+    "Context: {context_str}"
+    "\n---------------------\n"
+    "Finish the conversation:\n"
+    "{query_str}"
+)
+MORE_OPENED_TEXT_QA_PROMPT_ZH_TMPL =(
+    #"Given the context information and not prior knowledge, answer the question, and if the answer is not relevant to the context, said 'sorry I don't know' \n"
+    f"你将扮演啤酒大师与消费者聊天。 "
+    "你总是可以找到合适的方法去推荐啤酒 "
+    #f"If your answer will contains {','.join(COMPETITORS)} or not relevant to the given context, you will still recommand beers in the given context and expain why you recommand them\n"
+    #"If your answer is not relevant to the given context, you will try recommand beers in the given context and explain why you recommand them. "
+    #"You will always steer the conversation to the topics about given context. "
+    f"如果你要谈论啤酒，尽量谈论情境中提到的啤酒，或者 {'，'.join(RECOMMANDERS_ZH)}\n"
+    #"Please don't indicate you have a context in you answer.\n"
+    #"""Answer the question using the provided text \n"""
+    "---------------------\n"
+    "情境: {context_str}"
+    "\n---------------------\n"
+    "请完成对话:\n"
+    "{query_str}"
+)
+
+
+MORE_OPENED_TEXT_QA_PROMPT = QuestionAnswerPrompt(MORE_OPENED_TEXT_QA_PROMPT_TMPL)
+MORE_OPENED_TEXT_QA_PROMPT_ZH = QuestionAnswerPrompt(MORE_OPENED_TEXT_QA_PROMPT_ZH_TMPL)
+
 
 def get_llm_predictor(model_name:str=MODEL, **kwargs)->LLMPredictor:
     """get language model

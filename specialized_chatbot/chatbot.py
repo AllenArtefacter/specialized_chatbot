@@ -161,7 +161,7 @@ class Chatbot(GPTVectorStoreIndex):
 
         self.question_list = []
         self.answer_list = []
-        
+
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
@@ -184,6 +184,7 @@ class Chatbot(GPTVectorStoreIndex):
             query = lang_prompt+query
         text = self.query(query,**kwargs)
         logging.info(query)
+        logging.info(text.source_nodes)
         # logging.info(text)
         return str(text)
 
@@ -195,6 +196,7 @@ class Chatbot(GPTVectorStoreIndex):
             conversatiosn = lang_prompt + conversatiosn
         #self.text_qa_template = self.langchain_prompt_template
         resonse = self.query(conversatiosn, **kwargs)
+        logging.info(resonse.source_nodes)
         self.question_list.append(query)
         self.answer_list.append(str(resonse))
         return str(resonse)
