@@ -3,12 +3,15 @@ import logging
 import json
 from .llamaindex_langchain_utils import (
     DEFAULT_TEXT_QA_PROMPT,
+    HALF_OPENED_TEXT_QA_PROMPT_TMPL,
     MODEL,
     LLM,
     LLM_PREDICTOR,
     PROMPT_HELPER,
-    get_langchain_prompt_template
+    get_langchain_prompt_template,
+    get_llm_predictor
 )
+from .lang_utils import lang_detect
 from llama_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 import json
 from langchain import OpenAI
@@ -67,14 +70,35 @@ class Chatbot(GPTVectorStoreIndex):
     ----------
         document_directory: str
             data directory for you corpus hub, based on which the chatbot will answer
+        language_detect: bool
+            set `language_detect` the bot will detect the language used by the question and add a
+            prompt to tell OpenAI use the same language in the answer
+        human_agent_name: str
+            when comes a question what we feed to the chatbot is "{human_agent_name}:{quetions}\n{ai_agaent_name}:"
+            e.g., if `human_agent_name` and `ai_angent_name` are set to be "Human" and "AI"
+            the prompt will be:
+            ```
+            Please answer the question:
+            Human: question
+            AI:
+            ```
+        ai_angent_name: str
+            when comes a question what we feed to the chatbot is "{human_agent_name}:{quetions}\n{ai_agaent_name}:"
+            e.g., if `human_agent_name` and `ai_angent_name` are set to be "Human" and "AI"
+            the prompt will be:
+            ```
+            Please answer the question:
+            Human: question
+            AI:
+            ```
+        n_conversation: int
+            number of conversation the chatbot will track
 
     Examples:
     ----------
     load from disk
     >>> bot = chatbot.Chatbot.load_from_disk('bot.json')
-    conversations
     >>> bot.conversation("Budweiser?")
-    continue conversation
     >>> bot.continue_conversation('Plese list the history for that company'))
 
     """
@@ -84,14 +108,20 @@ class Chatbot(GPTVectorStoreIndex):
     def __init__(
         self,
         document_directory: Optional[str]=None,
+        language_detect: Optional[bool]=False,
+        human_agent_name: Optional[str] = 'prompt',
+        ai_angent_name: Optional[str] = 'response',
+        n_conversation: Optional[int] = N_CONVERSATION_MEMORY,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexDict] = None,
+        prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         simple_vector_store_data_dict: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
+        print('initializing chatbot')
         """Init params."""
         vector_store = SimpleVectorStore(
             simple_vector_store_data_dict=simple_vector_store_data_dict
@@ -100,11 +130,15 @@ class Chatbot(GPTVectorStoreIndex):
         self.document_directory = document_directory
         if self.document_directory:
             documents = SimpleDirectoryReader(self.document_directory).load_data()
-
+        self.language_detect = language_detect
         #text_qa_template = DEFAULT_TEXT_QA_PROMPT
-        llm_predictor = LLM_PREDICTOR
-        prompt_helper = PROMPT_HELPER
+        if not llm_predictor:
+            llm_predictor = LLM_PREDICTOR
+        if not prompt_helper:
+            prompt_helper = PROMPT_HELPER
 
+        self.human_agent_name = human_agent_name
+        self.ai_angent_name = ai_angent_name
 
         super().__init__(
             documents=documents,
@@ -122,23 +156,12 @@ class Chatbot(GPTVectorStoreIndex):
         self._index_struct.embeddings_dict = embedding_dict
         # update docstore with current struct
         self._docstore.add_documents([self.index_struct], allow_update=True)
+        # self.text_qa_template = self.langchain_prompt_template
+        self.n_conversation = n_conversation
 
         self.question_list = []
         self.answer_list = []
-
-        self.tools = [
-            Tool(
-                name = "ABI Index",
-                func=lambda q: str(self.query(q)),
-                description="Answer with ABI content",
-                return_direct=True
-            ),
-        ]
-
-        self.langchain_prompt_template = get_langchain_prompt_template(self.tools)
-        # self.text_qa_template = self.langchain_prompt_template
-        self.n_conversation = N_CONVERSATION_MEMORY
-
+        
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
@@ -155,6 +178,10 @@ class Chatbot(GPTVectorStoreIndex):
         query_kwargs["simple_vector_store_data_dict"] = vector_store._data
 
     def conversation(self, query, **kwargs):
+        query = f"{self.human_agent_name}:{query}\n{self.ai_angent_name}:"
+        if self.language_detect:
+            lang_prompt = self._add_language_prompt(query)
+            query = lang_prompt+query
         text = self.query(query,**kwargs)
         logging.info(query)
         # logging.info(text)
@@ -162,27 +189,38 @@ class Chatbot(GPTVectorStoreIndex):
 
     def continue_conversation(self, query, **kwargs):
         """answer with former conversation"""
-        self.question_list.append(query)
         conversatiosn = self._concate_qa(query)
+        if self.language_detect:
+            lang_prompt = self._add_language_prompt(query)
+            conversatiosn = lang_prompt + conversatiosn
         #self.text_qa_template = self.langchain_prompt_template
         resonse = self.query(conversatiosn, **kwargs)
+        self.question_list.append(query)
         self.answer_list.append(str(resonse))
         return str(resonse)
 
-    def _concate_qa(self,query):
-        len_counter = 0
+    def _concate_qa(self,query)->str:
+        text_conversations = ''
         conversations = []
-        if len(self.question_list):
+        if len(self.answer_list):
             for q,a, in zip(
                 self.question_list[-self.n_conversation:],
                 self.answer_list[-self.n_conversation:]
             ):
-                conversations.append(f"prompt:{q} \nresponse:{a} \n")
+                conversations.append(f"{self.human_agent_name}:{q} \n{self.ai_angent_name}:{a} \n")
             text_conversations = '\n'.join(conversations)
-            while len(text_conversations) >= 500 and len(conversations) >1:
+            while len(text_conversations) >= 1000 and len(conversations) >1:
                 conversations = conversations[1:]
                 text_conversations = '\n'.join(conversations)
 
-            text_conversations += f"prompt:{query} \n response:"
+        text_conversations += f"{self.human_agent_name}:{query} \n{self.ai_angent_name}:"
 
-            return text_conversations
+        return text_conversations
+
+    def _add_language_prompt(self,query:str)->str:
+        lang = lang_detect(query)
+        if lang not in ['Chinese', 'English']:
+            lang = 'English'
+        logging.info(f"{lang} detected from {query}")
+        lang_prompt = f"\nPlease do use {lang} to answer the final question\n"
+        return lang_prompt

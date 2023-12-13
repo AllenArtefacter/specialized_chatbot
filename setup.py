@@ -16,6 +16,8 @@ setup(name='specialized_chatbot',
       author='Allen',
       author_email='allen.liang@artefact.com',
       include_package_data=True,
+      package_data = {'specialized_chatbot':['../data/*.json']},
+      #data_files=[('data/lang_code.json')]
       install_requires=[
         'llama-index>=0.4.28',
         'langchain>=0.0.112',
@@ -24,6 +26,7 @@ setup(name='specialized_chatbot',
         'unstructured',
         'PyPDF2',
         'docx2txt',
-        'tensorflow>=2.0'
+        'tensorflow>=2.0',
+        'langid'
         ],
      )
